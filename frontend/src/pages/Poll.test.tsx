@@ -16,7 +16,7 @@ vi.mock("../lib/contract", async (orig) => ({
 }));
 
 import Poll from "./Poll";
-import { saveIdentity } from "../lib/identityStore";
+import { identityScope, saveIdentity } from "../lib/identityStore";
 import { DEPLOYMENT } from "../lib/contract";
 
 const basePoll = {
@@ -66,8 +66,26 @@ describe("Poll page: registration", () => {
     expect(await screen.findByRole("button", { name: /close registration/i })).toBeEnabled();
   });
 
+  it("registered voters can still back up their identity once voting has opened", async () => {
+    saveIdentity(DEPLOYMENT.chainId, identityScope(DEPLOYMENT.voting, ME), 0n, { nullifier: 1n, trapdoor: 2n, commitment: 3n });
+    mocks.commitments = [3n];
+    mocks.poll = { ...basePoll, phase: "Voting", memberCount: 1 };
+    setup();
+    expect(await screen.findByLabelText(/identity backup export/i)).toBeInTheDocument();
+  });
+
+  it("an identity stored for a different account is not used", async () => {
+    saveIdentity(DEPLOYMENT.chainId, identityScope(DEPLOYMENT.voting, "0x00000000000000000000000000000000000000Cc"), 0n, { nullifier: 1n, trapdoor: 2n, commitment: 3n });
+    mocks.commitments = [3n];
+    mocks.poll = { ...basePoll, memberCount: 1 };
+    setup();
+    await screen.findByText("Lunch?");
+    expect(screen.queryByText(/you are registered/i)).toBeNull();
+    expect(screen.getByRole("button", { name: /register to vote/i })).toBeInTheDocument();
+  });
+
   it("an address with a stored identity that is in the tree sees a registered notice", async () => {
-    saveIdentity(DEPLOYMENT.chainId, DEPLOYMENT.voting, 0n, { nullifier: 1n, trapdoor: 2n, commitment: 3n });
+    saveIdentity(DEPLOYMENT.chainId, identityScope(DEPLOYMENT.voting, ME), 0n, { nullifier: 1n, trapdoor: 2n, commitment: 3n });
     mocks.commitments = [3n];
     mocks.poll = { ...basePoll, memberCount: 1 };
     setup();

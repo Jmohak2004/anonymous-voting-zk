@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useWallet } from "../wallet";
 import { DEPLOYMENT, fetchPoll, getVotingContract, PollView } from "../lib/contract";
-import { exportIdentity, importIdentity, loadIdentity, saveIdentity } from "../lib/identityStore";
+import { exportIdentity, identityScope, importIdentity, loadIdentity, saveIdentity } from "../lib/identityStore";
 import { errorMessage, registerFlow } from "../lib/register";
 import { submitVote } from "../lib/vote";
 import VotePanel from "../components/VotePanel";
@@ -52,11 +52,12 @@ export default function Poll() {
     };
   }, [readProvider, refresh]);
 
+  const scope = identityScope(DEPLOYMENT.voting, address);
   const identity = useMemo(
-    () => loadIdentity(DEPLOYMENT.chainId, DEPLOYMENT.voting, pollId),
+    () => loadIdentity(DEPLOYMENT.chainId, scope, pollId),
     // re-evaluate when the member list changes (registration just confirmed)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [pollId, commitments, identityVersion]
+    [pollId, commitments, identityVersion, scope]
   );
   const registered = !!identity && commitments.includes(identity.commitment);
   const isCreator = !!address && !!poll && address.toLowerCase() === poll.creator.toLowerCase();
@@ -99,7 +100,7 @@ export default function Poll() {
                   registerFlow({
                     voting: getVotingContract(signer!),
                     chainId: DEPLOYMENT.chainId,
-                    votingAddress: DEPLOYMENT.voting,
+                    votingAddress: scope,
                     pollId,
                   })
                 )
@@ -121,7 +122,7 @@ export default function Poll() {
         </>
       )}
 
-      {poll.phase === "Registration" && registered && identity && (
+      {poll.phase !== "Ended" && registered && identity && (
         <details style={{ marginTop: "1rem" }}>
           <summary className="muted">Back up your voting identity</summary>
           <p className="muted">Keep this private. It is the only way to vote if you clear browser data.</p>
@@ -131,6 +132,7 @@ export default function Poll() {
 
       {poll.phase === "Voting" && (
         <VotePanel
+          key={scope}
           options={poll.options}
           hasIdentity={registered}
           canAct={!!signer && chainOk}
@@ -139,7 +141,7 @@ export default function Poll() {
               voting: getVotingContract(signer!),
               reader: getVotingContract(readProvider),
               chainId: DEPLOYMENT.chainId,
-              votingAddress: DEPLOYMENT.voting,
+              votingAddress: scope,
               pollId,
               option,
               onStage,
@@ -151,7 +153,7 @@ export default function Poll() {
             if (!commitments.includes(imported.commitment)) {
               throw new Error("That identity is not registered in this poll.");
             }
-            saveIdentity(DEPLOYMENT.chainId, DEPLOYMENT.voting, pollId, imported);
+            saveIdentity(DEPLOYMENT.chainId, scope, pollId, imported);
             setIdentityVersion((v) => v + 1);
           }}
         />

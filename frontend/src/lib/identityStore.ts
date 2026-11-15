@@ -7,6 +7,14 @@ export interface StorageLike {
   removeItem(key: string): void;
 }
 
+/**
+ * Storage scope for one account on one deployment, so two accounts used in the
+ * same browser never overwrite each other's identity. Pass the result wherever
+ * a `voting` address is expected below.
+ */
+export const identityScope = (voting: string, account: string | undefined) =>
+  `${voting.toLowerCase()}:${(account ?? "").toLowerCase()}`;
+
 const key = (chainId: number, voting: string, pollId: bigint) =>
   `zkvote:identity:${chainId}:${voting.toLowerCase()}:${pollId}`;
 
