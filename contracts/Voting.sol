@@ -48,6 +48,7 @@ contract Voting {
     event MemberRegistered(uint256 indexed pollId, uint256 commitment, uint256 index);
     event RegistrationClosed(uint256 indexed pollId, uint256 root);
     event PollEnded(uint256 indexed pollId);
+    event VoteCast(uint256 indexed pollId, uint256 option, uint256 nullifierHash);
 
     error InvalidOptions();
     error InvalidQuestion();
@@ -58,6 +59,9 @@ contract Voting {
     error DuplicateCommitment();
     error NotCreator();
     error NoMembers();
+    error InvalidOption();
+    error NullifierUsed();
+    error InvalidProof();
 
     constructor(address verifier_) {
         verifier = IGroth16Verifier(verifier_);
@@ -105,6 +109,33 @@ contract Voting {
         p.phase = Phase.Voting;
         p.root = p.tree.root;
         emit RegistrationClosed(pollId, p.root);
+    }
+
+    /// @notice Casts an anonymous vote. Anyone may submit; the proof shows membership.
+    /// @dev Public signals, in circuit order: [root, nullifierHash, pollId, option].
+    function castVote(
+        uint256 pollId,
+        uint256 option,
+        uint256 nullifierHash,
+        uint256[2] calldata a,
+        uint256[2][2] calldata b,
+        uint256[2] calldata c
+    ) external {
+        Poll storage p = _poll(pollId);
+        if (p.phase != Phase.Voting) revert WrongPhase();
+        if (option >= p.options.length) revert InvalidOption();
+        if (p.usedNullifiers[nullifierHash]) revert NullifierUsed();
+
+        uint256[4] memory pub = [p.root, nullifierHash, pollId, option];
+        if (!verifier.verifyProof(a, b, c, pub)) revert InvalidProof();
+
+        p.usedNullifiers[nullifierHash] = true;
+        p.tally[option] += 1;
+        emit VoteCast(pollId, option, nullifierHash);
+    }
+
+    function getTally(uint256 pollId) external view returns (uint256[] memory) {
+        return _poll(pollId).tally;
     }
 
     /// @notice Ends voting. Creator only.

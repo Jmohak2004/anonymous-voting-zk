@@ -1,5 +1,6 @@
 // Shared ZK helpers used by contract tests, scripts and the frontend.
 import { buildPoseidon } from "circomlibjs";
+import { groth16 } from "snarkjs";
 
 export const TREE_DEPTH = 20;
 /** BN254 scalar field order: every circuit value must be strictly below this. */
@@ -73,4 +74,49 @@ export async function buildMerkleProof(
     idx >>= 1;
   }
   return { root: level[0], pathElements, pathIndices };
+}
+
+export interface ProofArtifacts {
+  /** Path (Node) or URL (browser) of vote.wasm */
+  wasm: string;
+  /** Path (Node) or URL (browser) of vote_final.zkey */
+  zkey: string;
+}
+
+export interface VoteProof {
+  a: [string, string];
+  b: [[string, string], [string, string]];
+  c: [string, string];
+  nullifierHash: bigint;
+}
+
+/**
+ * Generates a Groth16 proof that `identity` is in the tree of `commitments`
+ * and votes `vote` in poll `pollId`. Output is in Solidity calldata order.
+ */
+export async function generateVoteProof(
+  identity: Identity,
+  commitments: bigint[],
+  pollId: bigint,
+  vote: bigint,
+  artifacts: ProofArtifacts
+): Promise<VoteProof> {
+  const index = commitments.findIndex((c) => c === identity.commitment);
+  if (index < 0) throw new Error("identity is not registered in this poll");
+  const tree = await buildMerkleProof(commitments, index);
+  const nullifierHash = await poseidon2(identity.nullifier, pollId);
+  const input = {
+    root: tree.root,
+    nullifierHash,
+    pollId,
+    vote,
+    nullifier: identity.nullifier,
+    trapdoor: identity.trapdoor,
+    pathElements: tree.pathElements,
+    pathIndices: tree.pathIndices,
+  };
+  const { proof, publicSignals } = await groth16.fullProve(input, artifacts.wasm, artifacts.zkey);
+  const raw = await groth16.exportSolidityCallData(proof, publicSignals);
+  const [a, b, c] = JSON.parse(`[${raw}]`);
+  return { a, b, c, nullifierHash };
 }
