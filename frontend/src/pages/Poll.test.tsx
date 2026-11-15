@@ -11,7 +11,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock("../wallet", () => ({ useWallet: () => mocks.wallet }));
 vi.mock("../lib/contract", async (orig) => ({
   ...(await orig<typeof import("../lib/contract")>()),
-  getVotingContract: () => ({ getCommitments: async () => mocks.commitments }),
+  getVotingContract: () => ({ getCommitments: async () => mocks.commitments, getTally: async () => [0n, 0n], on: () => {}, removeAllListeners: () => {} }),
   fetchPoll: async () => mocks.poll,
 }));
 

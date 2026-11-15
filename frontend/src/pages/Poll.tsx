@@ -6,12 +6,14 @@ import { exportIdentity, importIdentity, loadIdentity, saveIdentity } from "../l
 import { errorMessage, registerFlow } from "../lib/register";
 import { submitVote } from "../lib/vote";
 import VotePanel from "../components/VotePanel";
+import Results from "../components/Results";
 
 export default function Poll() {
   const pollId = BigInt(useParams().id ?? "0");
   const { address, signer, chainOk, readProvider } = useWallet();
   const [poll, setPoll] = useState<PollView>();
   const [commitments, setCommitments] = useState<bigint[]>([]);
+  const [tally, setTally] = useState<bigint[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
   const [loadError, setLoadError] = useState<string>();
@@ -20,9 +22,14 @@ export default function Poll() {
   const refresh = useCallback(async () => {
     try {
       const reader = getVotingContract(readProvider);
-      const [p, cs] = await Promise.all([fetchPoll(reader, pollId), reader.getCommitments(pollId)]);
+      const [p, cs, t] = await Promise.all([
+        fetchPoll(reader, pollId),
+        reader.getCommitments(pollId),
+        reader.getTally(pollId),
+      ]);
       setPoll(p);
       setCommitments([...cs].map(BigInt));
+      setTally([...t].map(BigInt));
       setLoadError(undefined);
     } catch (e: any) {
       setLoadError(errorMessage(e));
@@ -32,6 +39,18 @@ export default function Poll() {
   useEffect(() => {
     refresh();
   }, [refresh]);
+
+  // Live updates: refresh whenever someone votes or the poll changes phase.
+  useEffect(() => {
+    const reader = getVotingContract(readProvider);
+    const onEvent = () => refresh();
+    for (const name of ["VoteCast", "MemberRegistered", "RegistrationClosed", "PollEnded"]) {
+      reader.on?.(name, onEvent);
+    }
+    return () => {
+      reader.removeAllListeners?.();
+    };
+  }, [readProvider, refresh]);
 
   const identity = useMemo(
     () => loadIdentity(DEPLOYMENT.chainId, DEPLOYMENT.voting, pollId),
@@ -136,6 +155,21 @@ export default function Poll() {
             setIdentityVersion((v) => v + 1);
           }}
         />
+      )}
+
+      {(poll.phase === "Voting" || poll.phase === "Ended") && (
+        <Results options={poll.options} tally={tally} />
+      )}
+
+      {isCreator && poll.phase === "Voting" && (
+        <button
+          className="secondary"
+          style={{ marginTop: "1rem" }}
+          disabled={!canAct}
+          onClick={() => run(async () => (await getVotingContract(signer!).endPoll(pollId)).wait())}
+        >
+          End poll
+        </button>
       )}
 
       {!signer && <p className="muted">Connect a wallet to take part.</p>}
