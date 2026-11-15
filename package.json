@@ -6,7 +6,10 @@
   "scripts": {
     "test:circuits": "mocha -r ts-node/register \"circuits/test/*.test.ts\" --timeout 300000",
     "build:circuit": "bash scripts/build-circuit.sh",
-    "smoke": "ts-node scripts/smoke-prove.ts"
+    "smoke": "ts-node scripts/smoke-prove.ts",
+    "chain": "hardhat node",
+    "deploy:local": "hardhat run --network localhost scripts/deploy.ts",
+    "test": "hardhat test"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
