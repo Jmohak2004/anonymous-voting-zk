@@ -1,15 +1,22 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { useWallet } from "../wallet";
 import { DEPLOYMENT, fetchPoll, getVotingContract, PollView } from "../lib/contract";
 import { exportIdentity, identityScope, importIdentity, loadIdentity, saveIdentity } from "../lib/identityStore";
 import { errorMessage, registerFlow } from "../lib/register";
 import { submitVote } from "../lib/vote";
 import VotePanel from "../components/VotePanel";
+import NotFound from "../components/NotFound";
 import Results from "../components/Results";
 
-export default function Poll() {
-  const pollId = BigInt(useParams().id ?? "0");
+/** Route entry: rejects ids that are not plain non-negative integers before any hook runs. */
+export default function PollRoute() {
+  const raw = useParams().id ?? "";
+  if (!/^\d+$/.test(raw)) return <NotFound what="Poll" />;
+  return <Poll pollId={BigInt(raw)} />;
+}
+
+function Poll({ pollId }: { pollId: bigint }) {
   const { address, signer, chainOk, readProvider } = useWallet();
   const [poll, setPoll] = useState<PollView>();
   const [commitments, setCommitments] = useState<bigint[]>([]);
@@ -75,6 +82,7 @@ export default function Poll() {
     }
   }
 
+  if (loadError === "Poll not found.") return <NotFound what="Poll" />;
   if (loadError) return <p className="warn">Could not load poll: {loadError}</p>;
   if (!poll) return <p className="muted">Loading…</p>;
 
@@ -82,6 +90,8 @@ export default function Poll() {
 
   return (
     <div className="card">
+      <Link to="/" className="muted">← All polls</Link>
+      <br />
       <span className={`badge ${poll.phase}`}>{poll.phase}</span>
       <h2>{poll.question}</h2>
       <p className="muted">

@@ -7,12 +7,13 @@ const mocks = vi.hoisted(() => ({
   wallet: { address: undefined as string | undefined, signer: {} as any, chainOk: true, readProvider: {} as any },
   poll: {} as any,
   commitments: [] as bigint[],
+  fetchError: undefined as any,
 }));
 vi.mock("../wallet", () => ({ useWallet: () => mocks.wallet }));
 vi.mock("../lib/contract", async (orig) => ({
   ...(await orig<typeof import("../lib/contract")>()),
   getVotingContract: () => ({ getCommitments: async () => mocks.commitments, getTally: async () => [0n, 0n], on: () => {}, removeAllListeners: () => {} }),
-  fetchPoll: async () => mocks.poll,
+  fetchPoll: async () => { if (mocks.fetchError) throw mocks.fetchError; return mocks.poll; },
 }));
 
 import Poll from "./Poll";
@@ -38,6 +39,20 @@ describe("Poll page: registration", () => {
     mocks.wallet = { address: ME, signer: {}, chainOk: true, readProvider: {} };
     mocks.poll = { ...basePoll };
     mocks.commitments = [];
+    mocks.fetchError = undefined;
+  });
+
+  it("a poll that does not exist on-chain shows poll-not-found with a link back", async () => {
+    mocks.fetchError = Object.assign(new Error("x"), { revert: { name: "PollNotFound" } });
+    setup();
+    expect(await screen.findByText(/poll not found/i)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /back to all polls/i })).toHaveAttribute("href", "/");
+  });
+
+  it("a loaded poll links back to all polls", async () => {
+    setup();
+    await screen.findByText("Lunch?");
+    expect(screen.getByRole("link", { name: /all polls/i })).toHaveAttribute("href", "/");
   });
 
   it("shows the question and phase and a Register button during Registration", async () => {

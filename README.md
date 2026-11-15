@@ -73,4 +73,4 @@ docs/       architecture, security notes, design + plan
 
 ## Status
 
-Verified during development: 10 circuit tests, 39 contract tests (including real Groth16 proofs, cross-poll replay and tampering), 39 frontend tests, the e2e script, and a headless-Chromium run of the full UI flow (create, register, close, vote with in-browser proving, live tally). Sepolia network config exists but deployment there is untested.
+Verified during development: 10 circuit tests, 39 contract tests (including real Groth16 proofs, cross-poll replay and tampering), 49 frontend tests, the e2e script, and a headless-Chromium run of the full UI flow (create, register, close, vote with in-browser proving, live tally, double-vote rejection, every in-app link and bad-URL page, zero console errors). Sepolia network config exists but deployment there is untested.

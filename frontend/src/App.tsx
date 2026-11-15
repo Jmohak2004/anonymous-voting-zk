@@ -3,6 +3,7 @@ import { useWallet } from "./wallet";
 import CreatePoll from "./pages/CreatePoll";
 import Poll from "./pages/Poll";
 import Home from "./pages/Home";
+import NotFound from "./components/NotFound";
 
 function WalletBar() {
   const { address, connect, devWallets, devIndex, selectDev, chainOk, error } = useWallet();
@@ -45,6 +46,7 @@ export default function App() {
           <Route path="/" element={<Home />} />
           <Route path="/create" element={<CreatePoll />} />
           <Route path="/poll/:id" element={<Poll />} />
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
     </div>
