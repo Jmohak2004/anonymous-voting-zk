@@ -9,6 +9,7 @@
     "smoke": "ts-node scripts/smoke-prove.ts"
   },
   "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
     "@types/chai": "^4.3.20",
     "@types/mocha": "^10.0.10",
     "@types/node": "^26.6.6",
@@ -16,7 +17,10 @@
     "circom_tester": "^0.0.24",
     "circomlib": "^2.0.5",
     "circomlibjs": "^0.1.7",
+    "dotenv": "^18.0.10",
+    "hardhat": "^2.29.2",
     "mocha": "^12.0.3",
+    "poseidon-solidity": "^0.0.5",
     "snarkjs": "^0.7.6",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
