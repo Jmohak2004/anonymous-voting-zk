@@ -4,7 +4,9 @@
   "private": true,
   "description": "Anonymous on-chain voting with zero-knowledge proofs (Circom + Groth16 + Hardhat + React)",
   "scripts": {
-    "test:circuits": "mocha -r ts-node/register \"circuits/test/*.test.ts\" --timeout 300000"
+    "test:circuits": "mocha -r ts-node/register \"circuits/test/*.test.ts\" --timeout 300000",
+    "build:circuit": "bash scripts/build-circuit.sh",
+    "smoke": "ts-node scripts/smoke-prove.ts"
   },
   "devDependencies": {
     "@types/chai": "^4.3.20",
