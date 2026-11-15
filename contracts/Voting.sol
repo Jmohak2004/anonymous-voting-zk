@@ -46,6 +46,8 @@ contract Voting {
 
     event PollCreated(uint256 indexed pollId, address indexed creator);
     event MemberRegistered(uint256 indexed pollId, uint256 commitment, uint256 index);
+    event RegistrationClosed(uint256 indexed pollId, uint256 root);
+    event PollEnded(uint256 indexed pollId);
 
     error InvalidOptions();
     error InvalidQuestion();
@@ -54,6 +56,8 @@ contract Voting {
     error AlreadyRegistered();
     error InvalidCommitment();
     error DuplicateCommitment();
+    error NotCreator();
+    error NoMembers();
 
     constructor(address verifier_) {
         verifier = IGroth16Verifier(verifier_);
@@ -90,6 +94,26 @@ contract Voting {
         uint256 index = p.tree.insert(zeros, commitment);
         p.commitments.push(commitment);
         emit MemberRegistered(pollId, commitment, index);
+    }
+
+    /// @notice Freezes the member set and opens voting. Creator only, needs >= 1 member.
+    function closeRegistration(uint256 pollId) external {
+        Poll storage p = _poll(pollId);
+        if (msg.sender != p.creator) revert NotCreator();
+        if (p.phase != Phase.Registration) revert WrongPhase();
+        if (p.tree.size == 0) revert NoMembers();
+        p.phase = Phase.Voting;
+        p.root = p.tree.root;
+        emit RegistrationClosed(pollId, p.root);
+    }
+
+    /// @notice Ends voting. Creator only.
+    function endPoll(uint256 pollId) external {
+        Poll storage p = _poll(pollId);
+        if (msg.sender != p.creator) revert NotCreator();
+        if (p.phase != Phase.Voting) revert WrongPhase();
+        p.phase = Phase.Ended;
+        emit PollEnded(pollId);
     }
 
     function _poll(uint256 pollId) internal view returns (Poll storage p) {

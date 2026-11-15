@@ -64,5 +64,11 @@ describe("Voting: polls and registration", function () {
     await expect(voting.register(3, 1n)).to.be.revertedWithCustomError(voting, "PollNotFound");
   });
 
-  it.skip("reverts after registration closed (enabled in Task 10)", async () => {});
+  it("reverts after registration closed", async () => {
+    const { voting, signers } = await deployVoting();
+    await voting.createPoll("Q?", OPTIONS);
+    await voting.connect(signers[1]).register(0, 9n);
+    await voting.closeRegistration(0);
+    await expect(voting.connect(signers[2]).register(0, 10n)).to.be.revertedWithCustomError(voting, "WrongPhase");
+  });
 });
