@@ -1,0 +1,16 @@
+import { defineConfig } from "vitest/config";
+import react from "@vitejs/plugin-react";
+import path from "path";
+import { nodePolyfills } from "vite-plugin-node-polyfills";
+
+export default defineConfig({
+  plugins: [react(), ...(process.env.VITEST ? [] : [nodePolyfills({ include: ["buffer", "process", "util", "stream", "events"] })])],
+  resolve: { alias: { "@shared": path.resolve(__dirname, "../shared") } },
+  server: { fs: { allow: [".."] } },
+  test: {
+    environment: "jsdom",
+    globals: true,
+    setupFiles: ["./src/test-setup.ts"],
+    testTimeout: 30000,
+  },
+});
