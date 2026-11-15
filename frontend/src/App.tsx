@@ -1,5 +1,6 @@
 import { Link, Route, Routes } from "react-router-dom";
 import { useWallet } from "./wallet";
+import CreatePoll from "./pages/CreatePoll";
 
 function WalletBar() {
   const { address, connect, devWallets, devIndex, selectDev, chainOk, error } = useWallet();
@@ -40,6 +41,7 @@ export default function App() {
       <main>
         <Routes>
           <Route path="/" element={<p>Polls will appear here.</p>} />
+          <Route path="/create" element={<CreatePoll />} />
         </Routes>
       </main>
     </div>
