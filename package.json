@@ -10,7 +10,11 @@
     "chain": "hardhat node",
     "deploy:local": "hardhat run --network localhost scripts/deploy.ts",
     "test": "hardhat test",
-    "e2e": "hardhat run scripts/e2e.ts"
+    "e2e": "hardhat run scripts/e2e.ts",
+    "test:frontend": "npm --prefix frontend test",
+    "frontend:dev": "npm --prefix frontend run dev",
+    "frontend:build": "npm --prefix frontend run build",
+    "test:all": "npm run test:circuits && npm test && npm run test:frontend && npm run e2e"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
