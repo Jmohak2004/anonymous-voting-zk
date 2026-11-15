@@ -1,0 +1,7 @@
+{
+  "name": "anonymous-voting-zk",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Anonymous on-chain voting with zero-knowledge proofs (Circom + Groth16 + Hardhat + React)",
+  "scripts": {}
+}

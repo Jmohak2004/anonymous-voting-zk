@@ -1,0 +1,15 @@
+node_modules
+artifacts
+cache
+typechain-types
+frontend/dist
+frontend/public/zk
+circuits/build/*.ptau
+circuits/build/*.r1cs
+circuits/build/*.sym
+circuits/build/vote_js
+circuits/build/vote_0000.zkey
+.env
+.superpowers
+coverage
+.DS_Store
