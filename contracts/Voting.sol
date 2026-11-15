@@ -138,6 +138,31 @@ contract Voting {
         return _poll(pollId).tally;
     }
 
+    function getPoll(uint256 pollId)
+        external
+        view
+        returns (
+            address creator,
+            string memory question,
+            string[] memory options,
+            Phase phase,
+            uint256 memberCount,
+            uint256 root
+        )
+    {
+        Poll storage p = _poll(pollId);
+        return (p.creator, p.question, p.options, p.phase, p.commitments.length, p.root);
+    }
+
+    /// @notice All registered commitments in insertion order (leaf order of the tree).
+    function getCommitments(uint256 pollId) external view returns (uint256[] memory) {
+        return _poll(pollId).commitments;
+    }
+
+    function hasVoted(uint256 pollId, uint256 nullifierHash) external view returns (bool) {
+        return _poll(pollId).usedNullifiers[nullifierHash];
+    }
+
     /// @notice Ends voting. Creator only.
     function endPoll(uint256 pollId) external {
         Poll storage p = _poll(pollId);
